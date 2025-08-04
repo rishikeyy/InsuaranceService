@@ -1,8 +1,8 @@
-package domain.port.out;
+package port.out;
 
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class ClaimEventPublisher {
+public interface ClaimEventPublisher {
 
 }

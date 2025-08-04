@@ -1,4 +1,4 @@
-package domain.port.in;
+package port.in;
 
 import java.net.http.HttpResponse;
 
