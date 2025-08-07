@@ -1,4 +1,4 @@
 package domain.model;
 
-public class User {
+public class UserDto {
 }

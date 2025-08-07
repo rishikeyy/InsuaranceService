@@ -1,4 +1,4 @@
-package application.Service;
+package domain.Service;
 
 public class ClaimService {
 }
