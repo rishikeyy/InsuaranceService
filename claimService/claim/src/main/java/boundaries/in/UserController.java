@@ -18,7 +18,6 @@ public class UserController  {
 
     @PostMapping("/checkUser")
     public ResponseEntity<String> CheckUser(@RequestBody UserDto user){
-        String temp="fdf";
         return userService.CheckUser(user);
     }
 
