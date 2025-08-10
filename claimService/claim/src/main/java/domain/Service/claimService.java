@@ -10,6 +10,7 @@ import port.in.SubmitClaimInterface;
 public class claimService implements SubmitClaimInterface {
     @Override
     public ResponseEntity<String> SubmitClaim(ClaimDto claimDto){
+        //just text for adding to secondbranch
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response= restTemplate.postForEntity("http://localhost:8092/claimRequest",claimDto,String.class);
         return response;
