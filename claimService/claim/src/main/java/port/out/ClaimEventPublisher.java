@@ -1,8 +1,11 @@
 package port.out;
 
+import domain.model.ClaimDto;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Controller;
 
-@Controller
-public interface ClaimEventPublisher {
+import java.util.concurrent.CompletableFuture;
 
+public interface ClaimEventPublisher {
+    public CompletableFuture<SendResult<String, String>> sendToKafka( ClaimDto message);
 }
