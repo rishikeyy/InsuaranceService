@@ -1,4 +1,4 @@
 package domain.model;
 
-public class Claim {
+public class ClaimDto {
 }
