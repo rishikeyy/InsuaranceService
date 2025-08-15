@@ -16,7 +16,7 @@ public class ClaimService implements SubmitClaimInterface {
     @Autowired
     private  EventPublisher eventPublisher;//outbound adapter injected
     @Override
-    public CompletableFuture<SendResult<String, String>> SubmitClaim(ClaimDto claimDto){
+    public CompletableFuture<SendResult<String, ClaimDto>> SubmitClaim(ClaimDto claimDto){
         //RestTemplate restTemplate = new RestTemplate();
         //ResponseEntity<String> response= restTemplate.postForEntity("http://localhost:8092/claimRequest",claimDto,String.class);
 

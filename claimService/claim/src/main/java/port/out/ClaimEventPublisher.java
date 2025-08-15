@@ -7,5 +7,7 @@ import org.springframework.stereotype.Controller;
 import java.util.concurrent.CompletableFuture;
 
 public interface ClaimEventPublisher {
-    public CompletableFuture<SendResult<String, String>> sendToKafka( ClaimDto message);
+    public CompletableFuture<SendResult<String, ClaimDto>> sendToKafka( ClaimDto message);
+
+    //CompletableFuture<SendResult<String, ClaimDto>> SubmitClaim(ClaimDto message);
 }

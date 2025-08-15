@@ -9,5 +9,5 @@ import java.util.concurrent.CompletableFuture;
 
 //before taking claim check if user is logged in
 public interface SubmitClaimInterface {
-     CompletableFuture<SendResult<String, String>> SubmitClaim(ClaimDto claimDto);
+     CompletableFuture<SendResult<String, ClaimDto>> SubmitClaim(ClaimDto claimDto);
 }

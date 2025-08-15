@@ -17,7 +17,7 @@ public class InsuaranceClaimController {
     public ClaimService claimService;
 
     @PostMapping("/submitClaim")
-    public CompletableFuture<SendResult<String, String>> SubmitClaim(@Valid ClaimDto claimDto){
+    public CompletableFuture<SendResult<String, ClaimDto>> SubmitClaim(@Valid ClaimDto claimDto){
     return claimService.SubmitClaim(claimDto);
     }
 }
