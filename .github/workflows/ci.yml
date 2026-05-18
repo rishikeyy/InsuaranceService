@@ -1,4 +1,4 @@
-name: Insurance-CI Pipeline
+name: Insurance-CI-CD Pipeline
 
 on:
   push:
@@ -7,13 +7,14 @@ on:
       - master
       - develop
 
-  pull_request:
-    branches:
-      - main
-      - master
-      - develop
+env:
+  IMAGE_NAME: insurance-app
 
 jobs:
+
+# =====================================================
+# BUILD JOB
+# =====================================================
 
   build:
 
@@ -30,11 +31,112 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Give execute permission to Maven Wrapper
+      - name: Grant execute permission
         run: chmod +x mvnw
 
-      - name: Build Project
+      - name: Build Application
         run: ./mvnw clean install
 
       - name: Run Tests
         run: ./mvnw test
+
+# =====================================================
+# DOCKER + ECR JOB
+# =====================================================
+
+  docker:
+
+    runs-on: self-hosted
+
+    needs: build
+
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # AWS LOGIN
+      # -------------------------
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # -------------------------
+      # LOGIN TO ECR
+      # -------------------------
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # -------------------------
+      # BUILD IMAGE
+      # -------------------------
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
+
+      # -------------------------
+      # PUSH IMAGE
+      # -------------------------
+      - name: Push Docker Image
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+
+      # -------------------------
+      # STORE IMAGE OUTPUT
+      # -------------------------
+      - name: Set Image Output
+        id: image
+        run: |
+          echo "image=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+# =====================================================
+# DEPLOY TO LOCAL K8S
+# =====================================================
+
+  deploy:
+
+    runs-on: self-hosted
+
+    needs: docker
+
+    steps:
+
+      # -------------------------
+      # CONFIGURE AWS
+      # -------------------------
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # -------------------------
+      # LOGIN DOCKER TO ECR
+      # -------------------------
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      # -------------------------
+      # DEPLOY TO LOCAL K8S
+      # -------------------------
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/insurance-deployment \
+          insurance-container=${{ needs.docker.outputs.image }}
+
+      # -------------------------
+      # VERIFY DEPLOYMENT
+      # -------------------------
+      - name: Verify Rollout
+        run: |
+          kubectl rollout status deployment/insurance-deployment
