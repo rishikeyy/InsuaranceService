@@ -21,25 +21,6 @@ A cloud-native insurance claim management platform built using microservices arc
 * GitHub Actions
 * AWS (EKS/ECR)
 
-## Setup
-
-```bash
-git clone https://github.com/your-username/insurance-claim-platform.git
-cd insurance-claim-platform
-```
-
-### Run with Docker
-
-```bash
-docker-compose up --build
-```
-
-### Deploy to Kubernetes
-
-```bash
-kubectl apply -f kubernetes/
-```
-
 ## CI/CD Pipeline
 
 Implemented GitHub Actions workflow for:
