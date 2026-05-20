@@ -1,0 +1,27 @@
+# =========================
+# Build Stage
+# =========================
+FROM maven:3.9.9-eclipse-temurin-17 AS build
+
+WORKDIR /build
+
+COPY pom.xml .
+COPY src ./src
+
+RUN mvn clean package -DskipTests
+
+
+# =========================
+# Runtime Stage
+# =========================
+FROM gcr.io/distroless/java17-debian12
+
+WORKDIR /app
+
+COPY --from=build /build/target/order-service.jar app.jar
+
+EXPOSE 8080
+
+USER nonroot:nonroot
+
+ENTRYPOINT ["app.jar"]
