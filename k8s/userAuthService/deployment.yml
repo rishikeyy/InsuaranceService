@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-auth-deployment
+  namespace: production
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app: userAuthService
+
+  template:
+    metadata:
+      labels:
+        app: userAuthService
+
+    spec:
+      nodeSelector:
+        agentpool: backendpool
+
+      containers:
+      - name: userAuthService
+        image: enterprisepocacr.azurecr.io/user-auth-service:latest
+
+        ports:
+        - containerPort: 3000
+
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+        envFrom:
+        - configMapRef:
+            name: userAuthService-config
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
