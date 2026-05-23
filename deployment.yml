@@ -74,9 +74,9 @@ stages:
               kubernetesCluster: $(aksClusterName)
               namespace: $(namespace)
               manifests: |
-                k8s/userAuthService/deployment.yaml
-                k8s/userAuthService/service.yaml
-                k8s/userAuthService/hpa.yaml
+                k8s/userAuthService/deployment.yml
+                k8s/userAuthService/service.yml
+                k8s/userAuthService/hpa.yml
               containers: |
                 $(acrName).azurecr.io/$(imageRepositoryUserAuth):$(imageTag)
 
@@ -98,8 +98,8 @@ stages:
               kubernetesCluster: $(aksClusterName)
               namespace: $(namespace)
               manifests: |
-                k8s/insuranceService/deployment.yaml
-                k8s/insuranceService/service.yaml
-                k8s/insuranceService/hpa.yaml
+                k8s/insuranceService/deployment.yml
+                k8s/insuranceService/service.yml
+                k8s/insuranceService/hpa.yml
               containers: |
                 $(acrName).azurecr.io/$(imageRepositoryInsurance):$(imageTag)
