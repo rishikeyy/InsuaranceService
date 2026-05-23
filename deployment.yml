@@ -24,7 +24,7 @@ stages:
   - job: Build_UserAuthService
     steps:
 
-    - task: Docker@2
+    - task: AzureCLI@2
       inputs:
         command: buildAndPush
         repository: user-auth-service
@@ -39,7 +39,7 @@ stages:
   - job: Build_InsuranceService
     steps:
 
-    - task: Docker@2
+    - task: AzureCLI@2
       inputs:
         command: buildAndPush
         repository: insurance-service
