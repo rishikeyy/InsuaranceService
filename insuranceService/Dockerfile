@@ -37,11 +37,4 @@ EXPOSE 8080
 USER nonroot:nonroot
 
 # JVM optimized for containers
-ENTRYPOINT [
-  "java",
-  "-XX:+UseContainerSupport",
-  "-XX:MaxRAMPercentage=75",
-  "-XX:+ExitOnOutOfMemoryError",
-  "-jar",
-  "/app/app.jar"
-]
+ENTRYPOINT ["java","-XX:+UseContainerSupport","-XX:MaxRAMPercentage=75","-XX:+ExitOnOutOfMemoryError","-jar","/app/app.jar"]
