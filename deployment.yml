@@ -6,107 +6,93 @@ trigger:
 variables:
   acrName: enterprisepocacr
   imageTag: $(Build.BuildId)
+  imageRepositoryUserAuth: user-auth-service
+  imageRepositoryInsurance: insurance-service
+  dockerRegistryServiceConnection: azure-devOps-pipeline
+  azureSubscriptionConnection: azure-devOps-pipeline
+  aksResourceGroup: rg-enterprise-migration-poc
+  aksClusterName: enterprise-aks
+  namespace: production
 
 pool:
   vmImage: ubuntu-latest
 
 stages:
-
-# ==========================================
-# BUILD STAGE
-# ==========================================
 - stage: Build
+  displayName: Build and Push
   jobs:
-
-  # -----------------------------
-  # User Auth Service
-  # -----------------------------
   - job: Build_UserAuthService
+    displayName: Build User Auth Service
     steps:
-
-    - task: AzureCLI@2
+    - task: Docker@2
+      displayName: Build and push User Auth image
       inputs:
         command: buildAndPush
-        repository: user-auth-service
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(imageRepositoryUserAuth)
         dockerfile: userAuthService/Dockerfile
-        containerRegistry: acr-service-connection
         tags: |
           $(imageTag)
 
-  # -----------------------------
-  # Insurance Service
-  # -----------------------------
   - job: Build_InsuranceService
+    displayName: Build Insurance Service
     steps:
-
-    - task: AzureCLI@2
+    - task: Docker@2
+      displayName: Build and push Insurance image
       inputs:
         command: buildAndPush
-        repository: insurance-service
+        containerRegistry: $(dockerRegistryServiceConnection)
+        repository: $(imageRepositoryInsurance)
         dockerfile: insuranceService/Dockerfile
-        containerRegistry: acr-service-connection
         tags: |
           $(imageTag)
 
-
-# ==========================================
-# DEPLOY STAGE
-# ==========================================
 - stage: Deploy
+  displayName: Deploy to AKS
   dependsOn: Build
-
   jobs:
-
-  # -----------------------------
-  # Deploy User Auth Service
-  # -----------------------------
   - deployment: Deploy_UserAuthService
-
+    displayName: Deploy User Auth Service
     environment: production
-
     strategy:
       runOnce:
         deploy:
           steps:
-
           - task: KubernetesManifest@1
+            displayName: Deploy User Auth manifests
             inputs:
               action: deploy
-              kubernetesServiceConnection: aks-service-connection
-              namespace: production
-
+              connectionType: azureResourceManager
+              azureSubscriptionConnection: $(azureSubscriptionConnection)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              namespace: $(namespace)
               manifests: |
                 k8s/userAuthService/deployment.yaml
                 k8s/userAuthService/service.yaml
                 k8s/userAuthService/hpa.yaml
-
               containers: |
-                enterprisepocacr.azurecr.io/user-auth-service:$(imageTag)
+                $(acrName).azurecr.io/$(imageRepositoryUserAuth):$(imageTag)
 
-
-  # -----------------------------
-  # Deploy Insurance Service
-  # -----------------------------
   - deployment: Deploy_InsuranceService
-
+    displayName: Deploy Insurance Service
     environment: production
-
     strategy:
       runOnce:
         deploy:
           steps:
-
           - task: KubernetesManifest@1
+            displayName: Deploy Insurance manifests
             inputs:
               action: deploy
-              kubernetesServiceConnection: aks-service-connection
-              namespace: production
-
+              connectionType: azureResourceManager
+              azureSubscriptionConnection: $(azureSubscriptionConnection)
+              azureResourceGroup: $(aksResourceGroup)
+              kubernetesCluster: $(aksClusterName)
+              namespace: $(namespace)
               manifests: |
                 k8s/insuranceService/deployment.yaml
                 k8s/insuranceService/service.yaml
                 k8s/insuranceService/hpa.yaml
-
               containers: |
-                enterprisepocacr.azurecr.io/insurance-service:$(imageTag)
-                
+                $(acrName).azurecr.io/$(imageRepositoryInsurance):$(imageTag)
