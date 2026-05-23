@@ -100,3 +100,4 @@ stages:
                 k8s/insuranceService/hpa.yaml
               containers: |
                 $(acrName).azurecr.io/$(imageRepositoryInsurance):$(imageTag)
+                
