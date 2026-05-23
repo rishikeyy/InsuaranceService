@@ -109,3 +109,4 @@ stages:
 
               containers: |
                 enterprisepocacr.azurecr.io/insurance-service:$(imageTag)
+                
