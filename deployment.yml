@@ -58,7 +58,13 @@ stages:
       runOnce:
         deploy:
           steps:
-          - checkout: self
+            - checkout: self
+            - script: |
+                ls -la
+                ls -la k8s/
+                ls -la k8s/userAuthService/
+            displayName: 'Check manifest files'
+
           - task: KubernetesManifest@1
             displayName: Deploy User Auth manifests
             inputs:
@@ -68,9 +74,6 @@ stages:
               azureResourceGroup: $(aksResourceGroup)
               kubernetesCluster: $(aksClusterName)
               namespace: $(namespace)
-              - script: |
-              ls -la k8s/userAuthService/
-              displayName: 'Check manifest files'
               manifests: |
                 k8s/userAuthService/deployment.yaml
                 k8s/userAuthService/service.yaml
