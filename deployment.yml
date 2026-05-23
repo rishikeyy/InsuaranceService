@@ -58,13 +58,12 @@ stages:
       runOnce:
         deploy:
           steps:
-            - checkout: self
-            - script: |
-                ls -la
-                ls -la k8s/
-                ls -la k8s/userAuthService/
-            displayName: 'Check manifest files'
-
+          - checkout: self
+          - script: |
+              ls -la
+              ls -la k8s/
+              ls -la k8s/userAuthService/
+            displayName: Check manifest files
           - task: KubernetesManifest@1
             displayName: Deploy User Auth manifests
             inputs:
@@ -104,4 +103,3 @@ stages:
                 k8s/insuranceService/hpa.yaml
               containers: |
                 $(acrName).azurecr.io/$(imageRepositoryInsurance):$(imageTag)
-                
