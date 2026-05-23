@@ -50,7 +50,6 @@ stages:
 - stage: Deploy
   displayName: Deploy to AKS
   dependsOn: Build
-  - checkout: self
   jobs:
   - deployment: Deploy_UserAuthService
     displayName: Deploy User Auth Service
@@ -59,6 +58,7 @@ stages:
       runOnce:
         deploy:
           steps:
+          - checkout: self
           - task: KubernetesManifest@1
             displayName: Deploy User Auth manifests
             inputs:
@@ -85,6 +85,7 @@ stages:
       runOnce:
         deploy:
           steps:
+          - checkout: self
           - task: KubernetesManifest@1
             displayName: Deploy Insurance manifests
             inputs:
