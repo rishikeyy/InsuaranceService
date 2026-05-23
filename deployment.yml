@@ -50,6 +50,7 @@ stages:
 - stage: Deploy
   displayName: Deploy to AKS
   dependsOn: Build
+  - checkout: self
   jobs:
   - deployment: Deploy_UserAuthService
     displayName: Deploy User Auth Service
@@ -67,6 +68,9 @@ stages:
               azureResourceGroup: $(aksResourceGroup)
               kubernetesCluster: $(aksClusterName)
               namespace: $(namespace)
+              - script: |
+              ls -la k8s/userAuthService/
+              displayName: 'Check manifest files'
               manifests: |
                 k8s/userAuthService/deployment.yaml
                 k8s/userAuthService/service.yaml
