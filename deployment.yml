@@ -8,8 +8,8 @@ variables:
   imageTag: $(Build.BuildId)
   imageRepositoryUserAuth: user-auth-service
   imageRepositoryInsurance: insurance-service
-  dockerRegistryServiceConnection: azure-devOps-pipeline
-  azureSubscriptionConnection: azure-devOps-pipeline
+  dockerRegistryServiceConnection: acr-service-connection
+  azureSubscriptionConnection: aks-service-connection
   aksResourceGroup: rg-enterprise-migration-poc
   aksClusterName: enterprise-aks
   namespace: production
