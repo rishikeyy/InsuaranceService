@@ -9,7 +9,7 @@ variables:
   imageRepositoryUserAuth: user-auth-service
   imageRepositoryInsurance: insurance-service
   dockerRegistryServiceConnection: acr-service-connection
-  azureSubscriptionConnection: aks-service-connection
+  azureSubscriptionConnection: azure-devOps-pipeline
   aksResourceGroup: rg-enterprise-migration-poc
   aksClusterName: enterprise-aks
   namespace: production
