@@ -51,6 +51,7 @@ stages:
   displayName: Deploy to AKS
   dependsOn: Build
   jobs:
+
   - deployment: Deploy_UserAuthService
     displayName: Deploy User Auth Service
     environment: production
@@ -59,26 +60,50 @@ stages:
         deploy:
           steps:
           - checkout: self
+
+          # Optional: quick debug
           - script: |
               ls -la
               ls -la k8s/
               ls -la k8s/userAuthService/
             displayName: Check manifest files
-          - task: Kubernetes@1
-            displayName: Deploy User Auth manifests
+
+          # AKS auth + deploy via AzureCLI@2 inline script
+          - task: AzureCLI@2
+            displayName: 'AKS auth + Deploy User Auth'
             inputs:
-              action: deploy
-              connectionType: azureResourceManager
-              azureSubscriptionConnection: $(azureSubscriptionConnection)
-              azureResourceGroup: $(aksResourceGroup)
-              kubernetesCluster: $(aksClusterName)
-              namespace: $(namespace)
-              manifests: |
-                k8s/userAuthService/deployment.yml
-                k8s/userAuthService/service.yml
-                k8s/userAuthService/hpa.yml
-              containers: |
-                $(acrName).azurecr.io/$(imageRepositoryUserAuth):$(imageTag)
+              azureSubscription: $(azureSubscriptionConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                # Install kubectl (if not already present)
+                az aks install-cli
+
+                # Get AKS credentials
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+
+                # If AKS uses AAD + RBAC, enable Azure CLI login
+                kubelogin convert-kubeconfig -l azurecli
+
+                # Optional: verify context
+                kubectl config current-context
+
+                # Deploy manifests
+                kubectl apply -f k8s/userAuthService/
+
+                # Optional: patch image (if you want to use the exact image tag)
+                kubectl set image \
+                  deployment/user-auth-deployment \
+                  user-auth-container=$(acrName).azurecr.io/$(imageRepositoryUserAuth):$(imageTag) \
+                  -n $(namespace) || true
+
+          - script: |
+              echo "✅ User AuthService deployed to namespace '$(namespace)'"
+            displayName: Notify success
+
 
   - deployment: Deploy_InsuranceService
     displayName: Deploy Insurance Service
@@ -88,18 +113,28 @@ stages:
         deploy:
           steps:
           - checkout: self
-          - task: Kubernetes@1
-            displayName: Deploy Insurance manifests
+
+          - task: AzureCLI@2
+            displayName: 'AKS auth + Deploy Insurance'
             inputs:
-              action: deploy
-              connectionType: azureResourceManager
-              azureSubscriptionConnection: $(azureSubscriptionConnection)
-              azureResourceGroup: $(aksResourceGroup)
-              kubernetesCluster: $(aksClusterName)
-              namespace: $(namespace)
-              manifests: |
-                k8s/insuranceService/deployment.yml
-                k8s/insuranceService/service.yml
-                k8s/insuranceService/hpa.yml
-              containers: |
-                $(acrName).azurecr.io/$(imageRepositoryInsurance):$(imageTag)
+              azureSubscription: $(azureSubscriptionConnection)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az aks install-cli
+                az aks get-credentials \
+                  --resource-group $(aksResourceGroup) \
+                  --name $(aksClusterName) \
+                  --overwrite-existing
+                kubelogin convert-kubeconfig -l azurecli
+
+                kubectl apply -f k8s/insuranceService/
+
+                kubectl set image \
+                  deployment/insurance-deployment \
+                  insurance-container=$(acrName).azurecr.io/$(imageRepositoryInsurance):$(imageTag) \
+                  -n $(namespace) || true
+
+          - script: |
+              echo "✅ InsuranceService deployed to namespace '$(namespace)'"
+            displayName: Notify success
