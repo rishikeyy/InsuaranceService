@@ -12,7 +12,7 @@ variables:
   azureSubscriptionConnection: azure-devOps-pipeline
   aksResourceGroup: rg-enterprise-migration-poc
   aksClusterName: enterprise-aks
-  namespace: production
+  namespace: prod
 
 pool:
   vmImage: ubuntu-latest
