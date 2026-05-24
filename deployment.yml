@@ -64,7 +64,7 @@ stages:
               ls -la k8s/
               ls -la k8s/userAuthService/
             displayName: Check manifest files
-          - task: KubernetesManifest@1
+          - task: Kubernetes@1
             displayName: Deploy User Auth manifests
             inputs:
               action: deploy
@@ -88,7 +88,7 @@ stages:
         deploy:
           steps:
           - checkout: self
-          - task: KubernetesManifest@1
+          - task: Kubernetes@1
             displayName: Deploy Insurance manifests
             inputs:
               action: deploy
