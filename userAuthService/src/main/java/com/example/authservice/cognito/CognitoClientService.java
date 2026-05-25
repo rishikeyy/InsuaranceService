@@ -22,6 +22,7 @@ public class CognitoClientService {
 
     public LoginResponse authenticate(String username, String password) {
 
+        // Note: below code is inefficient as it creates a new client for every login attempt. In production, we should create the client once and reuse it.
         CognitoIdentityProviderClient cognitoClient =
                 CognitoIdentityProviderClient.builder()
                         .region(Region.of(region))
