@@ -37,9 +37,9 @@ Client → API Gateway → Microservices → MongoDB
                      ↓
                AWS Cognito
                      ↓
-         GitHub Actions CI/CD Pipeline
+               CI/CD Pipeline 
                      ↓
-              AWS EKS / ECR
+               Azure Kubernetes services(AKS)
 ```
 
 ## Services
