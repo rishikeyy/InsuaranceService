@@ -1,14 +1,21 @@
 package com.example.insuranceservice.controller;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.insuranceservice.model.InsuranceClaim;
+import com.example.insuranceservice.service.ClaimService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class InsuranceClaimController {
 
-    @PostMapping("/insuranceClaim")
-    public String claim() {
+    @Autowired
+    private ClaimService claimService;
 
-        return "Claim Submitted";
+    @PostMapping("/insuranceClaim")
+    public String submitClaim(
+            @RequestBody InsuranceClaim claim) {
+
+        return claimService.submitClaim(claim);
     }
 }

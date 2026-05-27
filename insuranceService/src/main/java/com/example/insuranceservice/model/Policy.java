@@ -3,25 +3,36 @@ package com.example.insuranceservice.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDate;
-
 @Document(collection = "policies")
 public class Policy {
 
     @Id
-    private String id;
+    private String policyId;
 
-    private String policyNumber;
+    private String userId;
+
     private String username;
-    private String insuranceType;
-    private LocalDate expiryDate;
 
-    public String getPolicyNumber() {
-        return policyNumber;
+    private String policyName;
+
+    private String expiryDate;
+
+    private boolean active;
+
+    public String getPolicyId() {
+        return policyId;
     }
 
-    public void setPolicyNumber(String policyNumber) {
-        this.policyNumber = policyNumber;
+    public void setPolicyId(String policyId) {
+        this.policyId = policyId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getUsername() {
@@ -32,19 +43,27 @@ public class Policy {
         this.username = username;
     }
 
-    public String getInsuranceType() {
-        return insuranceType;
+    public String getPolicyName() {
+        return policyName;
     }
 
-    public void setInsuranceType(String insuranceType) {
-        this.insuranceType = insuranceType;
+    public void setPolicyName(String policyName) {
+        this.policyName = policyName;
     }
 
-    public LocalDate getExpiryDate() {
+    public String getExpiryDate() {
         return expiryDate;
     }
 
-    public void setExpiryDate(LocalDate expiryDate) {
+    public void setExpiryDate(String expiryDate) {
         this.expiryDate = expiryDate;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }
