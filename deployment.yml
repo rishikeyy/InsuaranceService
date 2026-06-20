@@ -113,7 +113,7 @@ stages:
 
 - stage: Build
   dependsOn: CodeQuality
-
+  condition: and(succeeded(), false)
   variables:
     authImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.authImageTag'] ]
     insuranceImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.insuranceImageTag'] ]
