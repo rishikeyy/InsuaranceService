@@ -2,139 +2,152 @@ trigger:
   branches:
     include:
       - main
+      - feature/*
+      - fix/*
 
 variables:
+
   acrName: enterprisepocacr
-  imageTag: $(Build.BuildId)
+
+  dockerRegistryServiceConnection: acr-service-connection
+
+  sonarServiceConnection: sonar-service-connection
+
+  gitOpsRepo: CENTRAL-GITOPS
+
+  gitOpsBranch: main
+
   imageRepositoryUserAuth: user-auth-service
   imageRepositoryInsurance: insurance-service
-  dockerRegistryServiceConnection: acr-service-connection
-  azureSubscriptionConnection: azure-devOps-pipeline
-  aksResourceGroup: rg-enterprise-migration-poc
-  aksClusterName: enterprise-aks
-  namespace: prod
 
-pool:
-  vmImage: ubuntu-latest
+  imageTag: $(Build.BuildId)
 
-stages:
-- stage: Build
-  displayName: Build and Push
+
+
+
+
+  - stage: CodeQuality
+
+  displayName: SonarQube Analysis
+
   jobs:
-  - job: Build_UserAuthService
-    displayName: Build User Auth Service
+
+  - job: Sonar
+
+    pool:
+      vmImage: ubuntu-latest
+
     steps:
+
+    - checkout: self
+
+    - task: SonarQubePrepare@5
+
+      inputs:
+        SonarQube: $(sonarServiceConnection)
+
+        scannerMode: CLI
+
+        configMode: manual
+
+        cliProjectKey: InsuranceService
+
+        cliProjectName: InsuranceService
+
+    - script: |
+        dotnet build
+
+      displayName: Build Solution
+
+    - task: SonarQubeAnalyze@5
+
+    - task: SonarQubePublish@5
+
+      inputs:
+        pollingTimeoutSec: 300
+
+
+
+
+
+
+  - stage: Build
+
+  dependsOn: CodeQuality
+
+  jobs:
+
+  - job: BuildUserAuth
+
+    steps:
+
     - task: Docker@2
-      displayName: Build and push User Auth image
+
       inputs:
         command: buildAndPush
+
         containerRegistry: $(dockerRegistryServiceConnection)
+
         repository: $(imageRepositoryUserAuth)
+
         dockerfile: userAuthService/Dockerfile
+
         tags: |
           $(imageTag)
 
-  - job: Build_InsuranceService
-    displayName: Build Insurance Service
+  - job: BuildInsurance
+
     steps:
+
     - task: Docker@2
-      displayName: Build and push Insurance image
+
       inputs:
         command: buildAndPush
+
         containerRegistry: $(dockerRegistryServiceConnection)
+
         repository: $(imageRepositoryInsurance)
+
         dockerfile: insuranceService/Dockerfile
+
         tags: |
           $(imageTag)
 
-- stage: Deploy
-  displayName: Deploy to AKS
+
+          - stage: UpdateGitOps
+
   dependsOn: Build
+
   jobs:
 
-  - deployment: Deploy_UserAuthService
-    displayName: Deploy User Auth Service
-    environment: production
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
+  - job: UpdateGitOpsRepo
 
-          # Optional: quick debug
-          - script: |
-              ls -la
-              ls -la k8s/
-              ls -la k8s/userAuthService/
-            displayName: Check manifest files
+    pool:
+      vmImage: ubuntu-latest
 
-          # AKS auth + deploy via AzureCLI@2 inline script
-          - task: AzureCLI@2
-            displayName: 'AKS auth + Deploy User Auth'
-            inputs:
-              azureSubscription: $(azureSubscriptionConnection)
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                # Install kubectl (if not already present)
-                az aks install-cli
+    steps:
 
-                # Get AKS credentials
-                az aks get-credentials \
-                  --resource-group $(aksResourceGroup) \
-                  --name $(aksClusterName) \
-                  --overwrite-existing
+    - checkout: none
 
-                # If AKS uses AAD + RBAC, enable Azure CLI login
-                kubelogin convert-kubeconfig -l azurecli
+    - script: |
 
-                # Optional: verify context
-                kubectl config current-context
+        git config --global user.email "azuredevops@company.com"
+        git config --global user.name "Azure DevOps"
 
-                # Deploy manifests
-                kubectl apply -f k8s/userAuthService/
+        git clone https://$(GITOPS_PAT)@dev.azure.com/<ORG>/<PROJECT>/_git/CENTRAL-GITOPS
 
-                # Optional: patch image (if you want to use the exact image tag)
-                kubectl set image \
-                  deployment/user-auth-deployment \
-                  user-auth-container=$(acrName).azurecr.io/$(imageRepositoryUserAuth):$(imageTag) \
-                  -n $(namespace) || true
+        cd CENTRAL-GITOPS
 
-          - script: |
-              echo "✅ User AuthService deployed to namespace '$(namespace)'"
-            displayName: Notify success
+        sed -i "s/tag:.*/tag: $(imageTag)/" \
+        environments/dev/auth-image.yaml
 
+        sed -i "s/tag:.*/tag: $(imageTag)/" \
+        environments/dev/insurance-image.yaml
 
-  - deployment: Deploy_InsuranceService
-    displayName: Deploy Insurance Service
-    environment: production
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
+        git add .
 
-          - task: AzureCLI@2
-            displayName: 'AKS auth + Deploy Insurance'
-            inputs:
-              azureSubscription: $(azureSubscriptionConnection)
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                az aks install-cli
-                az aks get-credentials \
-                  --resource-group $(aksResourceGroup) \
-                  --name $(aksClusterName) \
-                  --overwrite-existing
-                kubelogin convert-kubeconfig -l azurecli
+        git commit -m "Deploy build $(imageTag)"
 
-                kubectl apply -f k8s/insuranceService/
+        git push origin main
 
-                kubectl set image \
-                  deployment/insurance-deployment \
-                  insurance-container=$(acrName).azurecr.io/$(imageRepositoryInsurance):$(imageTag) \
-                  -n $(namespace) || true
-
-          - script: |
-              echo "InsuranceService deployed to namespace '$(namespace)'"
-            displayName: Notify success
+      displayName: Update GitOps Repo
