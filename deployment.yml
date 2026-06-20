@@ -4,151 +4,186 @@ trigger:
       - main
       - feature/*
       - fix/*
+      - release/*
+
+pool:
+  vmImage: ubuntu-latest
 
 variables:
-
-  acrName: enterprisepocacr
-
   dockerRegistryServiceConnection: acr-service-connection
-
   sonarServiceConnection: sonar-service-connection
-
-  gitOpsRepo: CENTRAL-GITOPS
-
-  gitOpsBranch: main
-
   imageRepositoryUserAuth: user-auth-service
   imageRepositoryInsurance: insurance-service
 
-  authImageTag: $(Build.BuildId)-auth
-  insuranceImageTag: $(Build.BuildId)-insurance
+stages:
 
+# ======================================================
+# VERSION CALCULATION
+# ======================================================
 
-
-
-
-  - stage: CodeQuality
-
-  displayName: SonarQube Analysis
+- stage: CalculateVersion
+  displayName: Calculate Semantic Versions
 
   jobs:
+    - job: Versioning
+      displayName: Calculate Auth and Insurance Versions
 
-  - job: Sonar
+      steps:
+        - checkout: self
 
-    pool:
-      vmImage: ubuntu-latest
+        - script: |
+            set -e
 
-    steps:
+            git clone https://$(HELM_PAT)@dev.azure.com/<ORG>/<PROJECT>/_git/CENTRAL-HELM
 
-    - checkout: self
+            cd CENTRAL-HELM
 
-    - task: SonarQubePrepare@5
+            BRANCH="$(Build.SourceBranch)"
 
-      inputs:
-        SonarQube: $(sonarServiceConnection)
+            echo "Branch: $BRANCH"
 
-        scannerMode: CLI
+            bump_version() {
+              VERSION_FILE=$1
 
-        configMode: manual
+              VERSION=$(cat $VERSION_FILE)
 
-        cliProjectKey: InsuranceService
+              IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
 
-        cliProjectName: InsuranceService
+              if [[ "$BRANCH" == refs/heads/fix/* ]]; then
+                PATCH=$((PATCH+1))
 
-    - script: |
-        dotnet build
+              elif [[ "$BRANCH" == refs/heads/feature/* ]]; then
+                MINOR=$((MINOR+1))
+                PATCH=0
 
-      displayName: Build Solution
+              elif [[ "$BRANCH" == refs/heads/release/* ]]; then
+                MAJOR=$((MAJOR+1))
+                MINOR=0
+                PATCH=0
+              fi
 
-    - task: SonarQubeAnalyze@5
+              echo "$MAJOR.$MINOR.$PATCH"
+            }
 
-    - task: SonarQubePublish@5
+            AUTH_VERSION=$(bump_version versions/auth.version)
 
-      inputs:
-        pollingTimeoutSec: 300
+            INSURANCE_VERSION=$(bump_version versions/insurance.version)
 
+            echo "Auth Version: $AUTH_VERSION"
+            echo "Insurance Version: $INSURANCE_VERSION"
 
+            echo "##vso[task.setvariable variable=authImageTag;isOutput=true]$AUTH_VERSION"
+            echo "##vso[task.setvariable variable=insuranceImageTag;isOutput=true]$INSURANCE_VERSION"
+          name: VersionStep
 
+# ======================================================
+# SONARQUBE
+# ======================================================
 
+- stage: CodeQuality
+  dependsOn: CalculateVersion
 
+  jobs:
+    - job: Sonar
 
-  - stage: Build
+      steps:
+        - checkout: self
 
+        - task: SonarQubePrepare@5
+          inputs:
+            SonarQube: $(sonarServiceConnection)
+            scannerMode: CLI
+            configMode: manual
+            cliProjectKey: InsurancePlatform
+            cliProjectName: InsurancePlatform
+
+        - script: |
+            dotnet build
+          displayName: Build Solution
+
+        - task: SonarQubeAnalyze@5
+
+        - task: SonarQubePublish@5
+          inputs:
+            pollingTimeoutSec: 300
+
+# ======================================================
+# BUILD AND PUSH
+# ======================================================
+
+- stage: Build
   dependsOn: CodeQuality
 
+  variables:
+    authImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.authImageTag'] ]
+    insuranceImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.insuranceImageTag'] ]
+
   jobs:
+    - job: BuildUserAuth
+      displayName: Build User Auth Service
 
-  - job: BuildUserAuth
+      steps:
+        - task: Docker@2
+          inputs:
+            command: buildAndPush
+            containerRegistry: $(dockerRegistryServiceConnection)
+            repository: $(imageRepositoryUserAuth)
+            dockerfile: userAuthService/Dockerfile
+            tags: |
+              $(authImageTag)
 
-    steps:
+    - job: BuildInsurance
+      displayName: Build Insurance Service
 
-    - task: Docker@2
+      steps:
+        - task: Docker@2
+          inputs:
+            command: buildAndPush
+            containerRegistry: $(dockerRegistryServiceConnection)
+            repository: $(imageRepositoryInsurance)
+            dockerfile: insuranceService/Dockerfile
+            tags: |
+              $(insuranceImageTag)
 
-      inputs:
-        command: buildAndPush
+# ======================================================
+# UPDATE HELM REPO
+# ======================================================
 
-        containerRegistry: $(dockerRegistryServiceConnection)
-
-        repository: $(imageRepositoryUserAuth)
-
-        dockerfile: userAuthService/Dockerfile
-
-        tags: |
-          $(authImageTag)
-
-  - job: BuildInsurance
-
-    steps:
-
-    - task: Docker@2
-
-      inputs:
-        command: buildAndPush
-
-        containerRegistry: $(dockerRegistryServiceConnection)
-
-        repository: $(imageRepositoryInsurance)
-
-        dockerfile: insuranceService/Dockerfile
-
-        tags: |
-          $(insuranceImageTag)
-
-
-- stage: UpdateGitOps
-
+- stage: UpdateHelmRepo
   dependsOn: Build
 
+  variables:
+    authImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.authImageTag'] ]
+    insuranceImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.insuranceImageTag'] ]
+
   jobs:
+    - job: UpdateHelm
+      displayName: Update Helm Repo
 
-  - job: UpdateGitOpsRepo
+      steps:
+        - checkout: none
 
-    pool:
-      vmImage: ubuntu-latest
+        - script: |
+            set -e
 
-    steps:
+            git config --global user.email "azuredevops@company.com"
+            git config --global user.name "Azure DevOps"
 
-    - checkout: none
+            git clone https://$(HELM_PAT)@dev.azure.com/<ORG>/<PROJECT>/_git/CENTRAL-HELM
 
-    - script: |
+            cd CENTRAL-HELM
 
-        git config --global user.email "azuredevops@company.com"
-        git config --global user.name "Azure DevOps"
+            sed -i "s/tag:.*/tag: $(authImageTag)/" environments/dev/auth-image.yaml
 
-        git clone https://$(GITOPS_PAT)@dev.azure.com/<ORG>/<PROJECT>/_git/CENTRAL-GITOPS
+            sed -i "s/tag:.*/tag: $(insuranceImageTag)/" environments/dev/insurance-image.yaml
 
-        cd CENTRAL-GITOPS
+            echo "$(authImageTag)" > versions/auth.version
 
-        sed -i "s/tag:.*/tag: $(authImageTag)/" \
-        environments/dev/auth-image.yaml
+            echo "$(insuranceImageTag)" > versions/insurance.version
 
-        sed -i "s/tag:.*/tag: $(insuranceImageTag)/" \
-        environments/dev/insurance-image.yaml
+            git add .
 
-        git add .
+            git commit -m "Release Auth $(authImageTag) | Insurance $(insuranceImageTag)"
 
-        git commit -m "Deploy build $(authImageTag) and $(insuranceImageTag)"
-
-        git push origin main
-
-      displayName: Update GitOps Repo
+            git push origin main
+          displayName: Commit Helm Changes
