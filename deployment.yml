@@ -80,40 +80,40 @@ stages:
 # SONARQUBE
 # ======================================================
 
-- stage: CodeQuality
-  dependsOn: CalculateVersion
+# - stage: CodeQuality
+#   dependsOn: CalculateVersion
 
-  jobs:
-    - job: Sonar
+#   jobs:
+#     - job: Sonar
 
-      steps:
-        - checkout: self
+#       steps:
+#         - checkout: self
 
-        - task: SonarQubePrepare@5
-          inputs:
-            SonarQube: $(sonarServiceConnection)
-            scannerMode: CLI
-            configMode: manual
-            cliProjectKey: InsurancePlatform
-            cliProjectName: InsurancePlatform
+#         - task: SonarQubePrepare@5
+#           inputs:
+#             SonarQube: $(sonarServiceConnection)
+#             scannerMode: CLI
+#             configMode: manual
+#             cliProjectKey: InsurancePlatform
+#             cliProjectName: InsurancePlatform
 
-        - script: |
-            dotnet build
-          displayName: Build Solution
+#         - script: |
+#             dotnet build
+#           displayName: Build Solution
 
-        - task: SonarQubeAnalyze@5
+#         - task: SonarQubeAnalyze@5
 
-        - task: SonarQubePublish@5
-          inputs:
-            pollingTimeoutSec: 300
+#         - task: SonarQubePublish@5
+#           inputs:
+#             pollingTimeoutSec: 300
 
 # ======================================================
 # BUILD AND PUSH
 # ======================================================
 
 - stage: Build
-  dependsOn: CodeQuality
-  condition: and(succeeded(), false)
+  dependsOn: CalculateVersion
+  # condition: and(succeeded(), false)
   variables:
     authImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.authImageTag'] ]
     insuranceImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.insuranceImageTag'] ]
