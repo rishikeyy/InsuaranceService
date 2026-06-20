@@ -20,7 +20,8 @@ variables:
   imageRepositoryUserAuth: user-auth-service
   imageRepositoryInsurance: insurance-service
 
-  imageTag: $(Build.BuildId)
+  authImageTag: $(Build.BuildId)-auth
+  insuranceImageTag: $(Build.BuildId)-insurance
 
 
 
@@ -93,7 +94,7 @@ variables:
         dockerfile: userAuthService/Dockerfile
 
         tags: |
-          $(imageTag)
+          $(authImageTag)
 
   - job: BuildInsurance
 
@@ -111,10 +112,10 @@ variables:
         dockerfile: insuranceService/Dockerfile
 
         tags: |
-          $(imageTag)
+          $(insuranceImageTag)
 
 
-          - stage: UpdateGitOps
+- stage: UpdateGitOps
 
   dependsOn: Build
 
@@ -138,15 +139,15 @@ variables:
 
         cd CENTRAL-GITOPS
 
-        sed -i "s/tag:.*/tag: $(imageTag)/" \
+        sed -i "s/tag:.*/tag: $(authImageTag)/" \
         environments/dev/auth-image.yaml
 
-        sed -i "s/tag:.*/tag: $(imageTag)/" \
+        sed -i "s/tag:.*/tag: $(insuranceImageTag)/" \
         environments/dev/insurance-image.yaml
 
         git add .
 
-        git commit -m "Deploy build $(imageTag)"
+        git commit -m "Deploy build $(authImageTag) and $(insuranceImageTag)"
 
         git push origin main
 
