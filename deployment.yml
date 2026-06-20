@@ -136,5 +136,5 @@ stages:
                   -n $(namespace) || true
 
           - script: |
-              echo "✅ InsuranceService deployed to namespace '$(namespace)'"
+              echo "InsuranceService deployed to namespace '$(namespace)'"
             displayName: Notify success
