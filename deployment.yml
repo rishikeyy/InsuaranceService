@@ -34,7 +34,7 @@ stages:
         - script: |
             set -e
 
-            git clone https://$(HELM_PAT)@dev.azure.com/<ORG>/<PROJECT>/_git/CENTRAL-HELM
+            git clone https://$(HELM_PAT)@dev.azure.com/yadavkartik0506/MS-migration/_git/Central-GitOps
 
             cd CENTRAL-HELM
 
@@ -166,10 +166,10 @@ stages:
         - script: |
             set -e
 
-            git config --global user.email "azuredevops@company.com"
-            git config --global user.name "Azure DevOps"
+            git config --global user.email "yadavkartik0506@outlook.com"
+            git config --global user.name "kartikey yadav"
 
-            git clone https://$(HELM_PAT)@dev.azure.com/<ORG>/<PROJECT>/_git/CENTRAL-HELM
+            git clone https://$(HELM_PAT)@dev.azure.com/yadavkartik0506/MS-migration/_git/Central-GitOps
 
             cd CENTRAL-HELM
 
