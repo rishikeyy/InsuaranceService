@@ -45,7 +45,7 @@ stages:
 
             git clone https://$(HELM_PAT)@dev.azure.com/yadavkartik0506/MS-migration/_git/Central-Helm
 
-            cd CENTRAL-HELM
+            cd Central-Helm
 
             BRANCH="$(Build.SourceBranch)"
 
@@ -180,7 +180,7 @@ stages:
 
             git clone https://$(HELM_PAT)@dev.azure.com/yadavkartik0506/MS-migration/_git/Central-Helm
 
-            cd CENTRAL-HELM
+            cd Central-Helm
 
             sed -i "s/tag:.*/tag: $(authImageTag)/" environments/dev/auth-image.yaml
 
