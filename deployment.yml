@@ -137,15 +137,15 @@ stages:
           echo "Auth Tag = $(authImageTag)"
           echo "Insurance Tag = $(insuranceImageTag)"
         displayName: Debug Tags
-        
-        - task: Docker@2
-          inputs:
-            command: buildAndPush
-            containerRegistry: $(dockerRegistryServiceConnection)
-            repository: $(imageRepositoryUserAuth)
-            dockerfile: userAuthService/Dockerfile
-            tags: |
-              $(authImageTag)
+
+      - task: Docker@2
+        inputs:
+          command: buildAndPush
+          containerRegistry: $(dockerRegistryServiceConnection)
+          repository: $(imageRepositoryUserAuth)
+          dockerfile: userAuthService/Dockerfile
+          tags: |
+            $(authImageTag)
 
     - job: BuildInsurance
       displayName: Build Insurance Service
