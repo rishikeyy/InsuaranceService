@@ -12,11 +12,8 @@ pool:
 variables:
   - group: Migration-pipeline-varG
 
-  - name: dockerRegistryServiceConnection-UserAuthService
-    value: ACR-service-connection-userAuthServ
-
-  - name: dockerRegistryServiceConnection-InsuranceService
-    value: ACR-service-connection-insuranceServ
+  - name: dockerRegistryServiceConnection
+    value: ACR-service-connectionn
 
   - name: sonarServiceConnection
     value: sonar-service-connection
@@ -144,7 +141,7 @@ stages:
       - task: Docker@2
         inputs:
           command: buildAndPush
-          containerRegistry: $(dockerRegistryServiceConnection-UserAuthService)
+          containerRegistry: $(dockerRegistryServiceConnection)
           repository: $(imageRepositoryUserAuth)
           dockerfile: userAuthService/Dockerfile
           tags: |
@@ -157,7 +154,7 @@ stages:
         - task: Docker@2
           inputs:
             command: buildAndPush
-            containerRegistry: $(dockerRegistryServiceConnection-InsuranceService)
+            containerRegistry: $(dockerRegistryServiceConnection)
             repository: $(imageRepositoryInsurance)
             dockerfile: insuranceService/Dockerfile
             tags: |
@@ -168,7 +165,9 @@ stages:
 # ======================================================
 
 - stage: UpdateHelmRepo
-  dependsOn: Build
+  dependsOn:
+    - CalculateVersion
+    - Build
 
   variables:
     authImageTag: $[ stageDependencies.CalculateVersion.Versioning.outputs['VersionStep.authImageTag'] ]
