@@ -12,17 +12,20 @@ pool:
 variables:
   - group: Migration-pipeline-varG
 
-  - name: dockerRegistryServiceConnection
-    value: acr-service-connection
+  - name: dockerRegistryServiceConnection-UserAuthService
+    value: ACR-service-connection-userAuthServ
+
+  - name: dockerRegistryServiceConnection-InsuranceService
+    value: ACR-service-connection-insuranceServ
 
   - name: sonarServiceConnection
     value: sonar-service-connection
 
   - name: imageRepositoryUserAuth
-    value: user-auth-service
+    value: userauthservice
 
   - name: imageRepositoryInsurance
-    value: insurance-service
+    value: insuranceservice
 
 stages:
 
@@ -133,15 +136,15 @@ stages:
 
       steps:
 
-      - script: |
-          echo "Auth Tag = $(authImageTag)"
-          echo "Insurance Tag = $(insuranceImageTag)"
-        displayName: Debug Tags
+      # - script: |
+      #     echo "Auth Tag = $(authImageTag)"
+      #     echo "Insurance Tag = $(insuranceImageTag)"
+      #   displayName: Debug Tags
 
       - task: Docker@2
         inputs:
           command: buildAndPush
-          containerRegistry: $(dockerRegistryServiceConnection)
+          containerRegistry: $(dockerRegistryServiceConnection-UserAuthService)
           repository: $(imageRepositoryUserAuth)
           dockerfile: userAuthService/Dockerfile
           tags: |
@@ -154,7 +157,7 @@ stages:
         - task: Docker@2
           inputs:
             command: buildAndPush
-            containerRegistry: $(dockerRegistryServiceConnection)
+            containerRegistry: $(dockerRegistryServiceConnection-InsuranceService)
             repository: $(imageRepositoryInsurance)
             dockerfile: insuranceService/Dockerfile
             tags: |
