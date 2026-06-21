@@ -132,6 +132,12 @@ stages:
       displayName: Build User Auth Service
 
       steps:
+
+      - script: |
+          echo "Auth Tag = $(authImageTag)"
+          echo "Insurance Tag = $(insuranceImageTag)"
+        displayName: Debug Tags
+        
         - task: Docker@2
           inputs:
             command: buildAndPush
