@@ -10,10 +10,19 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  dockerRegistryServiceConnection: acr-service-connection
-  sonarServiceConnection: sonar-service-connection
-  imageRepositoryUserAuth: user-auth-service
-  imageRepositoryInsurance: insurance-service
+  - group: Migration-pipeline-varG
+
+  - name: dockerRegistryServiceConnection
+    value: acr-service-connection
+
+  - name: sonarServiceConnection
+    value: sonar-service-connection
+
+  - name: imageRepositoryUserAuth
+    value: user-auth-service
+
+  - name: imageRepositoryInsurance
+    value: insurance-service
 
 stages:
 
